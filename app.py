@@ -13,9 +13,6 @@ import os
 import tempfile
 from huggingface_hub import login
 
-token = st.secrets["huggingface"]["token"]
-login(token=token)
-
 groq_api_key = st.secrets['GROQ_API_KEY']
 
 def initialize_session_state():
