@@ -1,0 +1,14 @@
+PyPDF2
+docx2txt
+streamlit
+streamlit_chat
+groq
+langchain
+langchain-groq
+langchain-core
+langchain_community
+python-dotenv
+faiss-cpu
+sentence-transformers
+huggingface-hub
+langchain-huggingface
