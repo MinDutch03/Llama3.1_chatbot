@@ -13,7 +13,8 @@ import os
 import tempfile
 from huggingface_hub import login
 
-# hf_key = st.secrets('HF_TOKEN')
+token = st.secrets["huggingface"]["token"]
+login(token=token)
 
 groq_api_key = st.secrets['GROQ_API_KEY']
 
