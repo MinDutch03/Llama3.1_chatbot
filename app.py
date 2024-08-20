@@ -57,7 +57,7 @@ def create_conversational_chain(vector_store):
     # Create llm
     llm = ChatGroq(
             groq_api_key=groq_api_key,
-            model_name='meta-llama/Meta-Llama-3.1-70B'
+            model_name='meta-llama/Meta-Llama-3-70B-Instruct'
     )
 
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
