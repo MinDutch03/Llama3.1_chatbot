@@ -46,15 +46,15 @@ def display_chat_history(chain):
     if st.session_state['generated']:
         with reply_container:
             for i in range(len(st.session_state['generated'])):
-                message(st.session_state["past"][i], is_user=True, key=str(i) + '_user', avatar_style="avatars", seed="Aneka")
-                message(st.session_state["generated"][i], key=str(i), avatar_style="bots", seed="Aneka")
+                message(st.session_state["past"][i], is_user=True, key=str(i) + '_user', avatar_style="avataaars", seed="Aneka")
+                message(st.session_state["generated"][i], key=str(i), avatar_style="bottts", seed="Aneka")
 
 
 def create_conversational_chain(vector_store):
     # Create llm
     llm = ChatGroq(
             groq_api_key=groq_api_key,
-            model_name='meta-llama/Meta-Llama-3.1-70B'
+            model_name='meta-llama/Meta-Llama-3.1-8B'
     )
 
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
