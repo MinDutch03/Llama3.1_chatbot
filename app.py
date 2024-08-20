@@ -13,7 +13,7 @@ import os
 import tempfile
 from huggingface_hub import login
 
-hf_key = st.secrets('HF_TOKEN')
+# hf_key = st.secrets('HF_TOKEN')
 
 groq_api_key = st.secrets['GROQ_API_KEY']
 
@@ -57,7 +57,7 @@ def create_conversational_chain(vector_store):
     # Create llm
     llm = ChatGroq(
             groq_api_key=groq_api_key,
-            model_name='meta-llama/Meta-Llama-3.1-70B'
+            model_name='llama3-70b-8192'
     )
 
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
