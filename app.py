@@ -11,6 +11,9 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
 import os
 import tempfile
+from huggingface_hub import login
+
+login(token='HF_TOKEN')
 
 groq_api_key = st.secrets['GROQ_API_KEY']
 
