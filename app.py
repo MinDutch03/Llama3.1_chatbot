@@ -55,7 +55,7 @@ def create_conversational_chain(vector_store):
     # Create llm
     llm = ChatGroq(
             groq_api_key=groq_api_key,
-            model_name='llama3-70b-8192'
+            model_name='BioMistral-7B'
     )
 
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
