@@ -8,12 +8,11 @@ from langchain.chat_models import ChatOpenAI
 from langchain_community.vectorstores import FAISS
 from PyPDF2 import PdfReader
 import docx2txt
-import os
+import re
 
 # Retrieve OpenAI API key from Streamlit secrets
 openai_api_key = st.secrets['OPENAI_API_KEY']
 
-# Initialize session state for conversation history and chatbot responses
 def initialize_session_state():
     if 'history' not in st.session_state:
         st.session_state['history'] = []
@@ -23,16 +22,31 @@ def initialize_session_state():
         st.session_state['past'] = ["Hey! 👋"]
     if 'message_history' not in st.session_state:
         st.session_state['message_history'] = []
+    if 'user_questions' not in st.session_state:
+        st.session_state['user_questions'] = []
 
-# Function to handle the conversation with memory storage
+def extract_number_from_query(query, default=2):
+    match = re.search(r'\b(\d+)\b', query)
+    return int(match.group(1)) if match else default
+
 def conversation_chat(query, chain):
-    result = chain.invoke({"question": query})
-    st.session_state['history'].append((query, result["answer"]))
-    st.session_state['message_history'].append({"role": "user", "content": query})
-    st.session_state['message_history'].append({"role": "assistant", "content": result["answer"]})
-    return result["answer"]
+    # Check if query is asking for previous questions
+    if "last" in query.lower() and "questions" in query.lower():
+        # Get the number of questions requested, default to 2 if not specified
+        num = extract_number_from_query(query)
+        recent_questions = st.session_state['user_questions'][-num:]
+        response = f"Here are your last {num} questions:\n" + "\n".join(recent_questions)
+    else:
+        result = chain.invoke({"question": query})
+        response = result["answer"]
+        # Add the question and response to history and generated responses
+        st.session_state['history'].append((query, response))
+        st.session_state['message_history'].append({"role": "user", "content": query})
+        st.session_state['message_history'].append({"role": "assistant", "content": response})
+        st.session_state['user_questions'].append(query)
 
-# Displaying the chat history for continuity
+    return response
+
 def display_chat_history(chain):
     reply_container = st.container()
     container = st.container()
@@ -51,15 +65,13 @@ def display_chat_history(chain):
                 message(st.session_state["past"][i], is_user=True, key=str(i) + '_user', avatar_style="avataaars", seed="Aneka")
                 message(st.session_state["generated"][i], key=str(i), avatar_style="bottts", seed="Aneka")
 
-# Create a conversational chain with memory
 def create_conversational_chain(vector_store):
     llm = ChatOpenAI(
         openai_api_key=openai_api_key,
-        model_name='gpt-4o-mini',
+        model_name='gpt-3.5-turbo',
         temperature=0.7
     )
 
-    # Memory to track conversation history
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
     retriever = vector_store.as_retriever(
@@ -114,7 +126,10 @@ def main():
             vector_store = FAISS.from_texts(text_chunks, embedding=embeddings)
 
         chain = create_conversational_chain(vector_store)
+
+        # Display chat history
         display_chat_history(chain)
+
     else:
         st.warning('⚠️ Please upload your document in the sidebar first in order to access the chatbot!')
 
