@@ -29,9 +29,14 @@ def initialize_session_state():
         st.session_state['message_history'] = []  # Store all conversation history
 
 def conversation_chat(query, chain, history):
+    # Store user input in message_history
+    st.session_state['message_history'].append({"role": "user", "content": query})
+    # Get response from the conversational chain
     result = chain.invoke({"question": query, "chat_history": history})
+    # Append both user input and bot response to history
     history.append((query, result["answer"]))
-    st.session_state['message_history'].append({"user": query, "bot": result["answer"]})  # Add to message_history
+    # Store bot response in message_history
+    st.session_state['message_history'].append({"role": "assistant", "content": result["answer"]})
     return result["answer"]
 
 def display_chat_history(chain):
@@ -43,11 +48,13 @@ def display_chat_history(chain):
 
         if user_input:
             with st.spinner('Generating response...'):
+                # Call conversation_chat to handle conversation logic and response
                 output = conversation_chat(user_input, chain, st.session_state['history'])
+                # Append user input and bot output to past and generated lists
                 st.session_state['past'].append(user_input)
                 st.session_state['generated'].append(output)
-                st.session_state['message_history'].append({"user": user_input, "bot": output})  # Track in message_history
 
+    # Display entire chat history
     if st.session_state['generated']:
         with reply_container:
             for i in range(len(st.session_state['generated'])):
