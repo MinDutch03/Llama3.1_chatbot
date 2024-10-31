@@ -3,14 +3,12 @@ from streamlit_chat import message
 from langchain.chains import ConversationalRetrievalChain
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.memory import ConversationBufferMemory
-from langchain_core.prompts import PromptTemplate
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.chat_models import ChatOpenAI
 from langchain_community.vectorstores import FAISS
 from PyPDF2 import PdfReader
 import docx2txt
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.chat_models import ChatOpenAI
 import os
-import tempfile
 
 # Retrieve OpenAI API key from Streamlit secrets
 openai_api_key = st.secrets['OPENAI_API_KEY']
@@ -18,20 +16,17 @@ openai_api_key = st.secrets['OPENAI_API_KEY']
 def initialize_session_state():
     if 'history' not in st.session_state:
         st.session_state['history'] = []
-
     if 'generated' not in st.session_state:
         st.session_state['generated'] = ["Hello! Ask me anything 🤗"]
-
     if 'past' not in st.session_state:
         st.session_state['past'] = ["Hey! 👋"]
-
     if 'message_history' not in st.session_state:
         st.session_state['message_history'] = []
 
-def conversation_chat(query, chain, history):
+def conversation_chat(query, chain):
+    result = chain.invoke({"question": query})
+    st.session_state['history'].append((query, result["answer"]))
     st.session_state['message_history'].append({"role": "user", "content": query})
-    result = chain.invoke({"question": query, "chat_history": history})
-    history.append((query, result["answer"]))
     st.session_state['message_history'].append({"role": "assistant", "content": result["answer"]})
     return result["answer"]
 
@@ -41,10 +36,9 @@ def display_chat_history(chain):
 
     with container:
         user_input = st.chat_input("Ask me something....")
-
         if user_input:
             with st.spinner('Generating response...'):
-                output = conversation_chat(user_input, chain, st.session_state['history'])
+                output = conversation_chat(user_input, chain)
                 st.session_state['past'].append(user_input)
                 st.session_state['generated'].append(output)
 
@@ -57,10 +51,11 @@ def display_chat_history(chain):
 def create_conversational_chain(vector_store):
     llm = ChatOpenAI(
         openai_api_key=openai_api_key,
-        model_name='gpt-4o-mini',  # Or 'gpt-4' if available and needed
+        model_name='gpt-4o-mini',
         temperature=0.7
     )
 
+    # Memory to track conversation history
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
     retriever = vector_store.as_retriever(
@@ -70,8 +65,13 @@ def create_conversational_chain(vector_store):
             "mmr_lambda": 0.5
         }
     )
-    
-    chain = ConversationalRetrievalChain.from_llm(llm=llm, chain_type='stuff', retriever=retriever, memory=memory)
+
+    chain = ConversationalRetrievalChain.from_llm(
+        llm=llm,
+        chain_type='stuff',
+        retriever=retriever,
+        memory=memory
+    )
     return chain
 
 def main():
@@ -80,12 +80,11 @@ def main():
     st.header("Ask your Document 💬")
     linkedin = "https://www.linkedin.com/in/minhduc030303/"
     st.markdown("a Multi-Documents ChatBot App by [Duc Nguyen Minh](%s) 👨🏻‍💻" % linkedin)
-    
+
     st.sidebar.title("Document Processing")
     uploaded_files = st.sidebar.file_uploader("Upload your file here (.pdf, .docx, or .txt)", type=["pdf", "txt", "docx"], accept_multiple_files=True)
 
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2",
-                                           model_kwargs={'device': 'cpu'})
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2", model_kwargs={'device': 'cpu'})
 
     if uploaded_files:
         all_text = ""
