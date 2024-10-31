@@ -115,7 +115,7 @@ def main():
                 continue
             all_text += text
 
-        text_splitter = CharacterTextSplitter(separator="\n", chunk_size=1000, chunk_overlap=200, length_function=len)
+        text_splitter = CharacterTextSplitter(separator="\n", chunk_size=10000, chunk_overlap=500, length_function=len)
         text_chunks = text_splitter.split_text(all_text)
 
         with st.spinner('Analyze Document...'):
