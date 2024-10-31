@@ -68,7 +68,7 @@ def display_chat_history(chain):
 def create_conversational_chain(vector_store):
     llm = ChatOpenAI(
         openai_api_key=openai_api_key,
-        model_name='gpt-3.5-turbo',
+        model_name='gpt-4o-mini',
         temperature=0.7
     )
 
@@ -76,9 +76,9 @@ def create_conversational_chain(vector_store):
 
     retriever = vector_store.as_retriever(
         search_kwargs={
-            "k": 2,
+            "k": 3,
             "use_mmr": True,
-            "mmr_lambda": 0.5
+            "mmr_lambda": 0.7
         }
     )
 
