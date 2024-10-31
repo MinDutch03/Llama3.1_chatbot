@@ -12,3 +12,4 @@ faiss-cpu
 sentence-transformers
 huggingface-hub
 langchain-huggingface
+openai
