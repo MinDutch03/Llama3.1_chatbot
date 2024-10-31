@@ -25,10 +25,13 @@ def initialize_session_state():
     if 'past' not in st.session_state:
         st.session_state['past'] = ["Hey! 👋"]
 
+    if 'message_history' not in st.session_state:
+        st.session_state['message_history'] = []  # Store all conversation history
 
 def conversation_chat(query, chain, history):
     result = chain.invoke({"question": query, "chat_history": history})
     history.append((query, result["answer"]))
+    st.session_state['message_history'].append({"user": query, "bot": result["answer"]})  # Add to message_history
     return result["answer"]
 
 def display_chat_history(chain):
@@ -43,13 +46,13 @@ def display_chat_history(chain):
                 output = conversation_chat(user_input, chain, st.session_state['history'])
                 st.session_state['past'].append(user_input)
                 st.session_state['generated'].append(output)
+                st.session_state['message_history'].append({"user": user_input, "bot": output})  # Track in message_history
 
     if st.session_state['generated']:
         with reply_container:
             for i in range(len(st.session_state['generated'])):
                 message(st.session_state["past"][i], is_user=True, key=str(i) + '_user', avatar_style="avataaars", seed="Aneka")
                 message(st.session_state["generated"][i], key=str(i), avatar_style="bottts", seed="Aneka")
-
 
 def create_conversational_chain(vector_store):
     # Create llm
@@ -60,9 +63,16 @@ def create_conversational_chain(vector_store):
 
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
-    chain = ConversationalRetrievalChain.from_llm(llm=llm, chain_type='stuff',
-                                                 retriever=vector_store.as_retriever(search_kwargs={"k": 2}),
-                                                 memory=memory)
+    # Set up the chain with MMR-based retriever
+    retriever = vector_store.as_retriever(
+        search_kwargs={
+            "k": 2,
+            "use_mmr": True,          # Enable Maximal Marginal Relevance
+            "mmr_lambda": 0.5         # Adjust lambda to balance relevance (0) vs. diversity (1)
+        }
+    )
+    
+    chain = ConversationalRetrievalChain.from_llm(llm=llm, chain_type='stuff', retriever=retriever, memory=memory)
     return chain
 
 def main():
@@ -114,4 +124,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
